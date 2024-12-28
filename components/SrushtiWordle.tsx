@@ -10,6 +10,55 @@ import wordExists from 'word-exists';
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
 
+interface LetterTileProps {
+  currentLetter: string;
+  status: string;
+  shouldAnimate: boolean;
+  colIndex: number;
+}
+
+const LetterTile: React.FC<LetterTileProps> = ({ 
+  currentLetter, 
+  status, 
+  shouldAnimate,
+  colIndex 
+}) => {
+  const [showColor, setShowColor] = useState(false);
+
+  useEffect(() => {
+    if (shouldAnimate) {
+      const timer = setTimeout(() => {
+        setShowColor(true);
+      }, colIndex * 300 + 150); // Half the flip duration
+      return () => clearTimeout(timer);
+    }
+  }, [shouldAnimate, colIndex]);
+
+  return (
+    <motion.div
+      initial={shouldAnimate ? { rotateX: 0 } : undefined}
+      animate={shouldAnimate ? {
+        rotateX: [0, 90, 0],
+        transition: {
+          duration: 0.45,
+          delay: colIndex * 0.3,
+          times: [0, 0.5, 1]
+        }
+      } : {}}
+      style={{ transformStyle: 'preserve-3d' }}
+      className={`w-12 h-12 border-2 flex items-center justify-center text-2xl font-bold
+        ${shouldAnimate && showColor ? (
+          status === 'correct' ? 'bg-[#6aaa64] text-white border-[#6aaa64]' : 
+          status === 'present' ? 'bg-[#c9b458] text-white border-[#c9b458]' : 
+          'bg-[#787c7e] text-white border-[#787c7e]'
+        ) : currentLetter ? 'bg-white text-black border-[#878a8c]' :
+          'bg-white text-black border-[#d3d6da]'}`}
+    >
+      {currentLetter}
+    </motion.div>
+  );
+};
+
 export default function SrushtiWordle() {
   const [answer, setAnswer] = useState('');
   const [guesses, setGuesses] = useState<string[]>([]);
@@ -131,41 +180,16 @@ export default function SrushtiWordle() {
               const isCurrentRow = rowIndex === guesses.length;
               const currentLetter = isCurrentRow ? currentGuess[colIndex] || '' : letter;
               const status = guesses[rowIndex] ? checkGuess(guesses[rowIndex], answer)[colIndex] : '';
-              const shouldAnimate = guesses[rowIndex] && guesses[rowIndex] === guesses[guesses.length - 1];
-              const [showColor, setShowColor] = useState(false);
-
-              useEffect(() => {
-                if (shouldAnimate) {
-                  const timer = setTimeout(() => {
-                    setShowColor(true);
-                  }, colIndex * 300 + 150); // Half the flip duration
-                  return () => clearTimeout(timer);
-                }
-              }, [shouldAnimate]);
+              const shouldAnimate: boolean = Boolean(guesses[rowIndex] && guesses[rowIndex] === guesses[guesses.length - 1]);
               
               return (
-                <motion.div
+                <LetterTile
                   key={colIndex}
-                  initial={shouldAnimate ? { rotateX: 0 } : false}
-                  animate={shouldAnimate ? {
-                    rotateX: [0, 90, 0],
-                    transition: {
-                      duration: 0.45,
-                      delay: colIndex * 0.3,
-                      times: [0, 0.5, 1]
-                    }
-                  } : {}}
-                  style={{ transformStyle: 'preserve-3d' }}
-                  className={`w-12 h-12 border-2 flex items-center justify-center text-2xl font-bold
-                    ${shouldAnimate && showColor ? (
-                      status === 'correct' ? 'bg-[#6aaa64] text-white border-[#6aaa64]' : 
-                      status === 'present' ? 'bg-[#c9b458] text-white border-[#c9b458]' : 
-                      'bg-[#787c7e] text-white border-[#787c7e]'
-                    ) : currentLetter ? 'bg-white text-black border-[#878a8c]' :
-                      'bg-white text-black border-[#d3d6da]'}`}
-                >
-                  {currentLetter}
-                </motion.div>
+                  currentLetter={currentLetter}
+                  status={status}
+                  shouldAnimate={shouldAnimate}
+                  colIndex={colIndex}
+                />
               );
             })}
           </motion.div>
@@ -177,7 +201,7 @@ export default function SrushtiWordle() {
   return (
     <Card className="w-full max-w-md mx-auto mt-8">
       <CardHeader>
-        <CardTitle className="text-center">Srushti's Wordle</CardTitle>
+        <CardTitle className="text-center">Srushti&apos;s Wordle</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center">
         <div className="mb-8">
@@ -192,7 +216,7 @@ export default function SrushtiWordle() {
           <VirtualKeyboard onKeyPress={handleKeyPress} guessedLetters={guessedLetters} />
           {gameOver && (
             <div className="mt-4 text-center">
-              {guesses[guesses.length - 1] === answer ? 'Congratulations! You won!' : `Game Over. The word was ${answer}.`}
+              {guesses[guesses.length - 1] === answer ? "Congratulations! You won!" : `Game Over. The word was ${answer}.`}
             </div>
           )}
         </div>
